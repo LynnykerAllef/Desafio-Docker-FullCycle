@@ -8,4 +8,6 @@ RUN apt update && \
 
 WORKDIR /usr/src/app
 
+EXPOSE 3000
+
 
