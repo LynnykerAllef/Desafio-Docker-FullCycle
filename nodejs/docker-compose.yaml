@@ -1,0 +1,64 @@
+version: '3'
+
+services:
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx
+
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+
+    networks:
+      - proxy
+    ports:
+      - 8080:8080
+
+    depends_on: 
+      - app
+ 
+  app:
+    entrypoint: wait-for db:3306 -t 40 -- sh ./docker-entrypoint.sh
+    build:
+      context: ./app
+      
+    container_name: nodeapp
+    image: lynnyker/nodeapp
+
+    volumes:
+      - ./app:/usr/src/app
+      
+    networks:
+      - proxy 
+      - nodeapp-network
+    
+    depends_on:
+      - db
+
+  db:
+    image: mysql/mysql-server:8.0
+    command: --default-authentication-plugin=mysql_native_password
+ 
+    container_name: db
+    restart: always
+    tty: true
+
+    environment:
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=secret
+      - MYSQL_DATABASE=nodeappdb
+    volumes:
+      - ./db/mysql:/var/lib/mysql
+
+    networks:
+      - nodeapp-network
+
+
+networks:
+  proxy:
+    driver: bridge
+
+  nodeapp-network:
+    driver: bridge
+
+    
